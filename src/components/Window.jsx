@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { closeWindow } from "../store/feature/windowSlice";
+import CalculatorApp from "../apps/CalculatorApp";
 
 let higestZindex = 1;
 
@@ -94,9 +95,10 @@ const Window = (props) => {
           <p>Desktop</p>
           <p>Documents</p>
         </div>
-
         {/* Content */}
-        <div className="flex-1 p-4">Content section</div>
+        <div className="flex p-4 w-full h-full items-center justify-center">
+          {props.id === "calculator" ? <CalculatorApp /> : "Content section"}
+        </div>
       </div>
     </div>
   );
