@@ -1,8 +1,17 @@
 import { useState } from "react";
-import { TiCalculator } from "react-icons/ti";
+import { IoIosBackspace } from "react-icons/io";
 
 const CalculatorApp = () => {
+  const [display, setDisplay] = useState("0");
+  const [resultmode, setResultmode] = useState(false);
+
   const numHandler = (num) => {
+    if (resultmode === true) {
+      setDisplay(num);
+      setResultmode(false);
+      return;
+    }
+
     if (display === "0") {
       setDisplay(num);
     } else {
@@ -25,6 +34,7 @@ const CalculatorApp = () => {
 
     const lastChar = display.slice(-1);
     const operators = ["+", "-", "x", "/", "÷", "*"];
+    setResultmode(false);
 
     if (operators.includes(lastChar)) {
       setDisplay(display.slice(0, -1) + op);
@@ -33,14 +43,33 @@ const CalculatorApp = () => {
     }
   };
 
-  const [display, setDisplay] = useState("0");
+  const equalsHandler = () => {
+    const lastChar = display.slice(-1);
+    const operators = ["+", "-", "x", "/", "÷", "*"];
+    if (operators.includes(lastChar)) {
+      return;
+    } else {
+      try {
+        const result = eval(display);
+        setDisplay(String(result));
+        setResultmode(true);
+      } catch {
+        setDisplay("Error");
+      }
+    }
+  };
+
+  const clearHandler = () => {
+    if (display.length === 1) {
+      setDisplay("0");
+    } else {
+      setDisplay(display.slice(0, -1));
+    }
+  };
 
   return (
-    <div className="w-fit h-fit bg-[#2E2D2D] rounded-2xl text-white p-4">
-      <div className="text-right font-semibold text-3xl mb-2 opacity-60">
-        1+1
-      </div>
-      <div className="text-right font-semibold text-6xl leading-none mb-3">
+    <div className="w-[300px] h-fit bg-[#2E2D2D] rounded-2xl text-white p-4 ">
+      <div className="text-right font-semibold text-6xl leading-none mb-3 overflow-x-auto overflow-y-hidden whitespace-nowrap hide-scrollba">
         {display}
       </div>
 
@@ -54,7 +83,10 @@ const CalculatorApp = () => {
         <button className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]">
           +/-
         </button>
-        <button className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]">
+        <button
+          onClick={() => operatorHandler("%")}
+          className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]"
+        >
           %
         </button>
         <button
@@ -83,7 +115,7 @@ const CalculatorApp = () => {
           9
         </button>
         <button
-          onClick={() => operatorHandler("x")}
+          onClick={() => operatorHandler("*")}
           className="font-semibold text-xl w-14 h-14 rounded-full bg-[#FFA915]"
         >
           x
@@ -138,10 +170,6 @@ const CalculatorApp = () => {
         >
           +
         </button>
-
-        <button className="font-semibold text-2xl w-14 h-14 rounded-full bg-[#767474] flex items-center justify-center">
-          <TiCalculator />
-        </button>
         <button
           onClick={() => numHandler("0")}
           className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]"
@@ -154,7 +182,17 @@ const CalculatorApp = () => {
         >
           .
         </button>
-        <button className="font-semibold text-xl w-14 h-14 rounded-full bg-[#FFA915]">
+
+        <button
+          onClick={clearHandler}
+          className="font-semibold text-2xl w-14 h-14 rounded-full bg-[#767474] flex items-center justify-center"
+        >
+          <IoIosBackspace />
+        </button>
+        <button
+          onClick={equalsHandler}
+          className="font-semibold text-xl w-14 h-14 rounded-full bg-[#FFA915]"
+        >
           =
         </button>
       </div>
