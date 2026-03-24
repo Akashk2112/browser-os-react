@@ -1,90 +1,203 @@
-import { useState } from "react";
-import { IoIosBackspace } from "react-icons/io";
+import { useEffect, useState } from "react";
 
 const CalculatorApp = () => {
   const [display, setDisplay] = useState("0");
   const [resultmode, setResultmode] = useState(false);
+  const operators = ["+", "-", "x", "/", "÷", "*"];
+  useEffect(() => {
+    window.addEventListener("keydown", (e) => {
+      if (e.key >= "0" && e.key <= "9") {
+        numHandler(e.key);
+      } else if (operators.includes(e.key)) {
+        e.preventDefault();
+        operatorHandler(e.key);
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        deleteHandler();
+      } else if (e.key === "Escape") {
+        clearHandler();
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        deleteHandler();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        equalsHandler();
+      } else if (e.key === ".") {
+        dotHandler();
+      } else if (e.key === "%") {
+        percentHandler();
+      }
+    });
+  }, []);
 
   const numHandler = (num) => {
+    if (display === "Error") {
+      setDisplay(num);
+      return;
+    }
     if (resultmode === true) {
       setDisplay(num);
       setResultmode(false);
       return;
     }
 
-    if (display === "0") {
-      setDisplay(num);
-    } else {
-      setDisplay(display + num);
-    }
+    setDisplay((prev) => {
+      if (prev === "0") return num;
+      return prev + num;
+    });
   };
 
   const dotHandler = () => {
-    if (display.includes(".")) return;
+    setDisplay((prev) => {
+      if (prev === "Error") return prev;
 
-    if (display === "0") {
-      setDisplay("0.");
-    } else {
-      setDisplay(display + ".");
-    }
+      // find last operator position
+      let lastOpIndex = -1;
+      for (let op of operators) {
+        const idx = prev.lastIndexOf(op);
+        if (idx > lastOpIndex) lastOpIndex = idx;
+      }
+
+      // last number part
+      const lastNumber = prev.slice(lastOpIndex + 1);
+
+      // block if dot already in last number
+      if (lastNumber.includes(".")) return prev;
+
+      // start decimal properly
+      if (prev === "0" || operators.includes(prev.slice(-1))) {
+        return prev + "0.";
+      }
+
+      return prev + ".";
+    });
   };
 
   const operatorHandler = (op) => {
-    if (display === "0") return;
-
-    const lastChar = display.slice(-1);
-    const operators = ["+", "-", "x", "/", "÷", "*"];
     setResultmode(false);
-
-    if (operators.includes(lastChar)) {
-      setDisplay(display.slice(0, -1) + op);
-    } else {
-      setDisplay(display + op);
-    }
+    setDisplay((prev) => {
+      if (prev === "Error") return;
+      if (prev === "0") return;
+      const lastChar = prev.slice(-1);
+      if (operators.includes(lastChar)) return prev.slice(0, -1) + op;
+      return prev + op;
+    });
   };
 
   const equalsHandler = () => {
-    const lastChar = display.slice(-1);
-    const operators = ["+", "-", "x", "/", "÷", "*"];
-    if (operators.includes(lastChar)) {
-      return;
-    } else {
+    setDisplay((prev) => {
+      const lastChar = prev.slice(-1);
+
+      if (prev === "Error") return prev;
+      if (operators.includes(lastChar)) return prev;
+
       try {
-        const result = eval(display);
-        setDisplay(String(result));
-        setResultmode(true);
+        const result = eval(prev);
+
+        if (isFinite(result)) {
+          setResultmode(true);
+          return String(result);
+        } else {
+          setResultmode(false);
+          return "Error";
+        }
       } catch {
-        setDisplay("Error");
+        setResultmode(false);
+        return "Error";
       }
-    }
+    });
   };
 
   const clearHandler = () => {
-    if (display.length === 1) {
-      setDisplay("0");
+    setDisplay("0");
+  };
+
+  const deleteHandler = () => {
+    setDisplay((prev) => {
+      if (prev.length === 1) return "0";
+      return prev.slice(0, -1);
+    });
+  };
+
+  const percentHandler = () => {
+    setDisplay((prev) => {
+      if (prev === "Error") return prev;
+
+      let foundOperator = null;
+      let operatorIndex = -1;
+
+      for (let op of operators) {
+        const idx = prev.indexOf(op);
+        if (idx !== -1) {
+          foundOperator = op;
+          operatorIndex = idx;
+          break;
+        }
+      }
+
+      // standalone %
+      if (operatorIndex === -1) {
+        return String(Number(prev) / 100);
+      }
+
+      // invalid positions
+      if (operatorIndex === 0 || operatorIndex === prev.length - 1) {
+        return prev;
+      }
+
+      const firstStr = prev.slice(0, operatorIndex);
+      const secondStr = prev.slice(operatorIndex + 1);
+
+      if (secondStr === "") return prev;
+
+      const firstNum = Number(firstStr);
+      const secondNum = Number(secondStr);
+
+      let percentValue;
+
+      if (foundOperator === "+" || foundOperator === "-") {
+        percentValue = (firstNum * secondNum) / 100;
+      } else if (foundOperator === "*" || foundOperator === "/") {
+        percentValue = secondNum / 100;
+      } else {
+        return prev;
+      }
+
+      return String(firstNum + foundOperator + percentValue);
+    });
+  };
+
+  const plusMinusHandler = () => {
+    if (display === "Error") return;
+    if (display.charAt(0) === "-") {
+      setDisplay(display.slice(1));
     } else {
-      setDisplay(display.slice(0, -1));
+      setDisplay("-" + display);
     }
   };
 
   return (
-    <div className="w-[300px] h-fit bg-[#2E2D2D] rounded-2xl text-white p-4 ">
-      <div className="text-right font-semibold text-6xl leading-none mb-3 overflow-x-auto overflow-y-hidden whitespace-nowrap hide-scrollba">
+    <div className="w-70 h-fit bg-[#2E2D2D] rounded-2xl text-white p-4 ">
+      <div className="text-right font-semibold text-6xl leading-none mb-3 overflow-x-hidden overflow-y-hidden whitespace-nowrap hide-scrollba">
         {display}
       </div>
 
       <div className="grid grid-cols-4 gap-2">
         <button
-          onClick={() => setDisplay("0")}
+          onClick={clearHandler}
           className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]"
         >
           AC
         </button>
-        <button className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]">
-          +/-
+
+        <button
+          onClick={deleteHandler}
+          className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474] "
+        >
+          C
         </button>
         <button
-          onClick={() => operatorHandler("%")}
+          onClick={percentHandler}
           className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]"
         >
           %
@@ -170,6 +283,7 @@ const CalculatorApp = () => {
         >
           +
         </button>
+
         <button
           onClick={() => numHandler("0")}
           className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]"
@@ -182,12 +296,11 @@ const CalculatorApp = () => {
         >
           .
         </button>
-
         <button
-          onClick={clearHandler}
-          className="font-semibold text-2xl w-14 h-14 rounded-full bg-[#767474] flex items-center justify-center"
+          onClick={plusMinusHandler}
+          className="font-semibold text-xl w-14 h-14 rounded-full bg-[#767474]"
         >
-          <IoIosBackspace />
+          ±
         </button>
         <button
           onClick={equalsHandler}
