@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 const CalculatorApp = () => {
   const [display, setDisplay] = useState("0");
   const [resultmode, setResultmode] = useState(false);
   const operators = ["+", "-", "x", "/", "÷", "*"];
+  const activeWindow = useSelector((state) => state.window.activeWindow);
+
   useEffect(() => {
-    window.addEventListener("keydown", (e) => {
+    function handleKeyDown(e) {
+      if (activeWindow !== "calculator") return;
+
       if (e.key >= "0" && e.key <= "9") {
         numHandler(e.key);
       } else if (operators.includes(e.key)) {
@@ -16,19 +21,23 @@ const CalculatorApp = () => {
         deleteHandler();
       } else if (e.key === "Escape") {
         clearHandler();
-      } else if (e.key === "Backspace") {
-        e.preventDefault();
-        deleteHandler();
       } else if (e.key === "Enter") {
         e.preventDefault();
         equalsHandler();
       } else if (e.key === ".") {
         dotHandler();
       } else if (e.key === "%") {
+        e.preventDefault();
         percentHandler();
       }
-    });
-  }, []);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeWindow, display, resultmode]);
 
   const numHandler = (num) => {
     if (display === "Error") {
@@ -177,7 +186,7 @@ const CalculatorApp = () => {
   };
 
   return (
-    <div className="w-70 h-fit bg-[#2E2D2D] rounded-2xl text-white p-4 ">
+    <div className="w-full h-full bg-[#2E2D2D] rounded-xl text-white p-4 ">
       <div className="text-right font-semibold text-6xl leading-none mb-3 overflow-x-hidden overflow-y-hidden whitespace-nowrap hide-scrollba">
         {display}
       </div>
